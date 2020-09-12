@@ -1,0 +1,56 @@
+---
+- name: create directory /root/tools if not exist
+  file: path="/root/tools" owner="root" group="root" mode="0700" state="directory"
+
+- name: install administration tools
+  yum: name={{ item }} state=present update_cache=yes
+  with_items:
+    - vim
+    - screen
+    - mc
+    - iotop
+    - lsof
+    - lvm2
+    - unzip
+    - make
+    - perl-XML-LibXML
+    - sudo
+    - nmap
+    - wget
+    - nano
+    - net-tools
+
+- name: install tool for time synchronization
+  include_tasks: chrony.yml
+  when: common_aws_host
+
+- name: install tool for time synchronization
+  include_tasks: ntp.yml
+  when: not common_aws_host
+
+- name: install the postgresql python package
+  yum: name="python-psycopg2" state=present update_cache=yes
+  when: ( common_db_server == "postgresql" )
+
+- name: install the mysql python package
+  yum: name="MySQL-python" state=present update_cache=yes
+  when: ( common_db_server == "mysql" )
+
+- name: install the rsnapshot rpm from a remote repo
+  yum:
+    name: ftp://mirror.switch.ch/pool/4/mirror/opensuse/opensuse/distribution/leap/42.3/repo/oss/suse/noarch/rsnapshot-1.4.2-6.1.noarch.rpm
+    state: present
+
+- name: install the python pip rpm from a remote repo
+  yum:
+    name: ftp://mirror.switch.ch/pool/4/mirror/centos/7.3.1611/cloud/x86_64/openstack-ocata/common/python-pip-8.1.2-1.el7.noarch.rpm
+    state: present
+
+- name: install the ssl-cert-check rpm from a remote repo
+  yum:
+    name: http://abf-downloads.openmandriva.org/3.0/repository/i586/contrib/release//ssl-cert-check-3.3-4-omv2015.0.noarch.rpm
+    state: present
+
+- name: Remove Apparmor
+  yum: name=apparmor state=absent
+  ignore_errors: yes

@@ -1,0 +1,21 @@
+---
+
+- name: create config folder for aws cli
+  file:
+    path: /root/.aws
+    state: directory
+    owner: root
+    group: root
+    mode: 0600
+  when:
+    - common_aws_cli_default_region is defined
+
+- name: configure aws cli
+  template:
+    src: aws-cli.config.j2
+    dest: /root/.aws/config
+    owner: root
+    group: root
+    mode: 0600
+  when:
+    - common_aws_cli_default_region is defined

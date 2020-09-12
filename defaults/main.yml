@@ -1,0 +1,36 @@
+# file: common/defaults/main.yml
+# common_domainname: localdomain
+# common_hostname: localhost
+common_db_server: postgresql
+common_aws_host: true
+common_aws_host_network_interface: "{{ ansible_default_ipv4.interface }}"
+
+# if defined, configures the default region for root user for aws cli
+# common_aws_cli_default_region: eu-central-1
+
+# Partitions and filesystems to create and mount
+# Each entry represents a partition with a filesystem and a mountpoint. Createing the
+# parition can be skipped by not defining part_start and part_end. If "mountpoint" is not defined, the
+# filesystem will not  be mounted.
+# Note: This will only work for block devices
+common_partitions: []
+# Example 1: one partition over the whole disk with ext4 mounted to /mnt
+#  - device: /dev/sdX
+#    number: 1
+#    flags: linux
+#    part_start: 0%
+#    part_end: 100%
+#    fstype: ext4
+#    mountpoint: /mnt
+#    owner: root
+#    group: root
+#    mode: 0755
+#    dump: 0
+#    passno: 0
+# Example 2: skip partition and only create filesystem
+#  - device: /dev/sdX
+#    number: 1
+#    fstype: ext4
+#    mountpoint: /mnt
+#    dump: 0
+#    passno: 0

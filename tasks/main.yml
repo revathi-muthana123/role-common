@@ -1,0 +1,80 @@
+---
+- name: use variables for specific OS
+  include_vars:
+    file: "{{ ansible_os_family }}.yml"
+
+- name: generate locale
+  locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: create directory /root/tools if not exist
+  file:
+    path: "/root/tools"
+    owner: "root"
+    group: "root"
+    mode: "0700"
+    state: "directory"
+
+- name: install Commons on specific OS
+  include_tasks: "{{ ansible_os_family }}.yml"
+
+- name: set hard and soft file limit in limits.conf
+  pam_limits:
+    domain: "*"
+    limit_type: "{{ item }}"
+    limit_item: nofile
+    value: "{{ common_common_nfiles }}"
+  with_items:
+    - soft
+    - hard
+
+- name: copy template profile
+  template:
+    src: etc/profile.j2
+    dest: /etc/profile
+    owner: root
+    group: root
+    mode: 0644
+
+- name: copy template hosts and mailname
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  with_items:
+    - { src: 'etc/hosts.j2', dest: '/etc/hosts', owner: 'root', group: 'root', mode: '0644' }
+    - { src: 'etc/mailname.j2', dest: '/etc/mailname', owner: 'root', group: 'root', mode: '0644' }
+  when:
+    - common_hostname is defined
+    - common_domainname is defined
+
+- block:
+  - name: set hostname
+    hostname:
+      name: "{{ ansible_nodename }}.eu-central-1.compute.internal"
+    when: not 'eu-central-1.compute.internal' in ansible_nodename
+
+  - name: Set hostname in /etc/hosts file
+    lineinfile:
+      path: /etc/hosts
+      insertafter: '^127.0.0.1'
+      line: "{{ hostvars[inventory_hostname]['ansible_'+common_aws_host_network_interface]['ipv4']['address'] }} {{ ansible_nodename }}"
+  when: common_aws_host
+
+- name: set locale
+  blockinfile:
+    path: /etc/environment
+    block: "{{ common_locale }}"
+    state: present
+
+- name: Create partitions, filesystems and mounts
+  include_tasks: filesystem.yml
+
+- name: Configure AWS CLI
+  include_tasks: aws-cli.yml
+  
+- name: ubuntu /home/ubuntu permissions for ubuntu 18.04 LTS
+  shell: chmod 755 /home/ubuntu && chown -R ubuntu:ubuntu /home/ubuntu

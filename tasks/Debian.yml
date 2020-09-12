@@ -1,0 +1,64 @@
+---
+- name: install tools for applications and administration
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - nfs-common
+    - postgresql-client
+    - git
+    - python-setuptools
+    - vim
+    - screen
+    - mc
+    - iotop
+    - lsof
+    - lvm2
+    - unzip
+    - make
+    - libxml-libxml-perl
+    - sudo
+    - nmap
+    - wget
+    - nano
+    - net-tools
+    - rsnapshot
+    - ssl-cert-check
+
+- name: install tool for time synchronization
+  include_tasks: chrony.yml
+  when: common_aws_host
+
+- name: install tool for time synchronization
+  include_tasks: ntp.yml
+  when: not common_aws_host
+
+- name: install tools for aws host
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - cloud-guest-utils
+  when: ( common_aws_host )
+
+- name: install python-pip
+  apt: name="python-pip" state=present update_cache=yes cache_valid_time=3600
+
+- name: upgrade python-pip from version 1.5.4 to 9.0.1
+  pip:
+    name: pip
+    extra_args: --upgrade
+    version: 9.0.1
+
+- name: install boto for python
+  pip:
+    name: boto3
+  changed_when: False
+
+- name: install the postgresql python package
+  apt: name="python-psycopg2" state=present update_cache=yes cache_valid_time=3600
+  when: ( common_db_server == "postgresql" )
+
+- name: install the mysql python package
+  apt: name="python-mysqldb" state=present update_cache=yes cache_valid_time=3600
+  when: ( common_db_server == "mysql" )
+
+- name: Remove Apparmor
+  apt: name=apparmor state=absent
+  ignore_errors: yes
